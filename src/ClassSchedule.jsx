@@ -24,7 +24,7 @@ export default function ClassSchedule() {
                 <td>{course.courseNumber}</td>
                 <td>{course.courseName}</td>
                 <td>
-                  <button onClick={() => dropCourse(course.id)}>Drop</button>
+                  <button onClick={() => dropCourse(course.courseNumber)}>Drop</button>
                 </td>
               </tr>
             ))}
