@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 
 export default function SchoolCatalog() {
-  // State to hold courses fetched from API
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState([]);       // All courses from API
+  const [search, setSearch] = useState("");         // Search input value
 
-  // Fetch courses when component mounts
   useEffect(() => {
     fetch("/api/courses.json")
       .then((res) => res.json())
@@ -12,12 +11,26 @@ export default function SchoolCatalog() {
       .catch((err) => console.error("Error fetching courses:", err));
   }, []);
 
+  // Filter courses based on search input (Course Number or Course Name)
+  const filteredCourses = courses.filter((course) => {
+    const searchLower = search.toLowerCase();
+    return (
+      course.courseNumber.toLowerCase().includes(searchLower) ||
+      course.courseName.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <div className="school-catalog">
       <h1>School Catalog</h1>
 
-      {/* Search input remains as-is */}
-      <input type="text" placeholder="Search" />
+      {/* Search input updates state in real-time */}
+      <input
+        type="text"
+        placeholder="Search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
       <table>
         <thead>
@@ -31,9 +44,8 @@ export default function SchoolCatalog() {
           </tr>
         </thead>
 
-        {/* Dynamic table body */}
         <tbody>
-          {courses.map((course) => (
+          {filteredCourses.map((course) => (
             <tr key={course.id}>
               <td>{course.trimester}</td>
               <td>{course.courseNumber}</td>
@@ -48,7 +60,6 @@ export default function SchoolCatalog() {
         </tbody>
       </table>
 
-      {/* Pagination div remains unchanged */}
       <div className="pagination">
         <button>Previous</button>
         <button>Next</button>
