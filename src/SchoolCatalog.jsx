@@ -3,12 +3,11 @@ import { useEffect, useState } from "react";
 export default function SchoolCatalog() {
   const [courses, setCourses] = useState([]);          // All courses from API
   const [search, setSearch] = useState("");            // Search input
-  const [sortConfig, setSortConfig] = useState({      // Column sorting state
-    key: null,
-    direction: "ascending",
-  });
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "ascending" }); // Sorting state
+  const [currentPage, setCurrentPage] = useState(1);   // Pagination state
+  const rowsPerPage = 5;                               // Number of rows per page
 
-  // Fetch courses once on component mount
+  // Fetch courses from API once
   useEffect(() => {
     fetch("/api/courses.json")
       .then((res) => res.json())
@@ -16,7 +15,7 @@ export default function SchoolCatalog() {
       .catch((err) => console.error("Error fetching courses:", err));
   }, []);
 
-  // Handle sorting when a header is clicked
+  // Sorting function
   const handleSort = (key) => {
     let direction = "ascending";
     if (sortConfig.key === key && sortConfig.direction === "ascending") {
@@ -25,7 +24,7 @@ export default function SchoolCatalog() {
     setSortConfig({ key, direction });
   };
 
-  // Compute filtered courses
+  // Filter courses based on search input
   const filteredCourses = courses.filter((course) => {
     const searchLower = search.toLowerCase();
     return (
@@ -41,11 +40,8 @@ export default function SchoolCatalog() {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
 
-      // Handle numeric vs string sorting
       if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortConfig.direction === "ascending"
-          ? aValue - bValue
-          : bValue - aValue;
+        return sortConfig.direction === "ascending" ? aValue - bValue : bValue - aValue;
       }
 
       return sortConfig.direction === "ascending"
@@ -54,15 +50,28 @@ export default function SchoolCatalog() {
     });
   }
 
+  // Pagination logic
+  const totalPages = Math.ceil(sortedCourses.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedCourses = sortedCourses.slice(startIndex, startIndex + rowsPerPage);
+
+  // Handle Next/Previous buttons
+  const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const handlePrevious = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+
   return (
     <div className="school-catalog">
       <h1>School Catalog</h1>
 
+      {/* Search input */}
       <input
         type="text"
         placeholder="Search"
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setCurrentPage(1); // Reset to first page on search
+        }}
       />
 
       <table>
@@ -78,7 +87,7 @@ export default function SchoolCatalog() {
         </thead>
 
         <tbody>
-          {sortedCourses.map((course) => (
+          {paginatedCourses.map((course) => (
             <tr key={course.id}>
               <td>{course.trimester}</td>
               <td>{course.courseNumber}</td>
@@ -93,9 +102,14 @@ export default function SchoolCatalog() {
         </tbody>
       </table>
 
+      {/* Pagination buttons */}
       <div className="pagination">
-        <button>Previous</button>
-        <button>Next</button>
+        <button onClick={handlePrevious} disabled={currentPage === 1}>
+          Previous
+        </button>
+        <button onClick={handleNext} disabled={currentPage === totalPages}>
+          Next
+        </button>
       </div>
     </div>
   );
