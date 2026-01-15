@@ -2,7 +2,7 @@ import { useEffect, useState, useContext } from "react";
 import { CourseContext } from "./CourseContext";
 
 export default function SchoolCatalog() {
-  const { enrollCourse } = useContext(CourseContext);
+  const { enrollCourse, enrolledCourses } = useContext(CourseContext);
 
   const [courses, setCourses] = useState([]);
   const [search, setSearch] = useState("");
@@ -14,7 +14,7 @@ export default function SchoolCatalog() {
     fetch("/api/courses.json")
       .then((res) => res.json())
       .then((data) => setCourses(data))
-      .catch((err) => console.error("Error fetching courses:", err));
+      .catch((err) => console.error(err));
   }, []);
 
   const handleSort = (key) => {
@@ -42,7 +42,6 @@ export default function SchoolCatalog() {
       if (typeof aValue === "number" && typeof bValue === "number") {
         return sortConfig.direction === "ascending" ? aValue - bValue : bValue - aValue;
       }
-
       return sortConfig.direction === "ascending"
         ? String(aValue).localeCompare(String(bValue))
         : String(bValue).localeCompare(String(aValue));
@@ -56,10 +55,12 @@ export default function SchoolCatalog() {
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const handlePrevious = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
+  // Helper to check if course is already enrolled
+  const isEnrolled = (courseId) => enrolledCourses.some((c) => c.id === courseId);
+
   return (
     <div className="school-catalog">
       <h1>School Catalog</h1>
-
       <input
         type="text"
         placeholder="Search"
@@ -69,19 +70,17 @@ export default function SchoolCatalog() {
           setCurrentPage(1);
         }}
       />
-
       <table>
         <thead>
           <tr>
             <th onClick={() => handleSort("trimester")}>Trimester</th>
             <th onClick={() => handleSort("courseNumber")}>Course Number</th>
-            <th onClick={() => handleSort("courseName")}>Courses Name</th>
+            <th onClick={() => handleSort("courseName")}>Course Name</th>
             <th onClick={() => handleSort("semesterCredits")}>Semester Credits</th>
             <th onClick={() => handleSort("totalClockHours")}>Total Clock Hours</th>
             <th>Enroll</th>
           </tr>
         </thead>
-
         <tbody>
           {paginatedCourses.map((course) => (
             <tr key={course.id}>
@@ -91,13 +90,19 @@ export default function SchoolCatalog() {
               <td>{course.semesterCredits}</td>
               <td>{course.totalClockHours}</td>
               <td>
-                <button onClick={() => enrollCourse(course)}>Enroll</button>
+                <button
+                  onClick={() => enrollCourse(course)}
+                  disabled={enrolledCourses.some((c) => c.courseNumber === course.courseNumber)}
+                >
+                  {enrolledCourses.some((c) => c.courseNumber === course.courseNumber)
+                    ? "Enrolled"
+                    : "Enroll"}
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-
       <div className="pagination">
         <button onClick={handlePrevious} disabled={currentPage === 1}>
           Previous
