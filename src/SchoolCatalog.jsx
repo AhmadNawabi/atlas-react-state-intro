@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 
 export default function SchoolCatalog() {
-  const [courses, setCourses] = useState([]);       // All courses from API
-  const [search, setSearch] = useState("");         // Search input value
+  const [courses, setCourses] = useState([]);          // All courses from API
+  const [search, setSearch] = useState("");            // Search input
+  const [sortConfig, setSortConfig] = useState({      // Column sorting state
+    key: null,
+    direction: "ascending",
+  });
 
+  // Fetch courses once on component mount
   useEffect(() => {
     fetch("/api/courses.json")
       .then((res) => res.json())
@@ -11,7 +16,16 @@ export default function SchoolCatalog() {
       .catch((err) => console.error("Error fetching courses:", err));
   }, []);
 
-  // Filter courses based on search input (Course Number or Course Name)
+  // Handle sorting when a header is clicked
+  const handleSort = (key) => {
+    let direction = "ascending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") {
+      direction = "descending";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Compute filtered courses
   const filteredCourses = courses.filter((course) => {
     const searchLower = search.toLowerCase();
     return (
@@ -20,11 +34,30 @@ export default function SchoolCatalog() {
     );
   });
 
+  // Sort filtered courses
+  const sortedCourses = [...filteredCourses];
+  if (sortConfig.key) {
+    sortedCourses.sort((a, b) => {
+      const aValue = a[sortConfig.key];
+      const bValue = b[sortConfig.key];
+
+      // Handle numeric vs string sorting
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortConfig.direction === "ascending"
+          ? aValue - bValue
+          : bValue - aValue;
+      }
+
+      return sortConfig.direction === "ascending"
+        ? String(aValue).localeCompare(String(bValue))
+        : String(bValue).localeCompare(String(aValue));
+    });
+  }
+
   return (
     <div className="school-catalog">
       <h1>School Catalog</h1>
 
-      {/* Search input updates state in real-time */}
       <input
         type="text"
         placeholder="Search"
@@ -35,17 +68,17 @@ export default function SchoolCatalog() {
       <table>
         <thead>
           <tr>
-            <th>Trimester</th>
-            <th>Course Number</th>
-            <th>Courses Name</th>
-            <th>Semester Credits</th>
-            <th>Total Clock Hours</th>
+            <th onClick={() => handleSort("trimester")}>Trimester</th>
+            <th onClick={() => handleSort("courseNumber")}>Course Number</th>
+            <th onClick={() => handleSort("courseName")}>Courses Name</th>
+            <th onClick={() => handleSort("semesterCredits")}>Semester Credits</th>
+            <th onClick={() => handleSort("totalClockHours")}>Total Clock Hours</th>
             <th>Enroll</th>
           </tr>
         </thead>
 
         <tbody>
-          {filteredCourses.map((course) => (
+          {sortedCourses.map((course) => (
             <tr key={course.id}>
               <td>{course.trimester}</td>
               <td>{course.courseNumber}</td>
