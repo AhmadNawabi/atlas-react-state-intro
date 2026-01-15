@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { CourseContext } from "./CourseContext";
 
 export default function SchoolCatalog() {
-  const [courses, setCourses] = useState([]);          // All courses from API
-  const [search, setSearch] = useState("");            // Search input
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "ascending" }); // Sorting state
-  const [currentPage, setCurrentPage] = useState(1);   // Pagination state
-  const rowsPerPage = 5;                               // Number of rows per page
+  const { enrollCourse } = useContext(CourseContext);
 
-  // Fetch courses from API once
+  const [courses, setCourses] = useState([]);
+  const [search, setSearch] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "ascending" });
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 5;
+
   useEffect(() => {
     fetch("/api/courses.json")
       .then((res) => res.json())
@@ -15,7 +17,6 @@ export default function SchoolCatalog() {
       .catch((err) => console.error("Error fetching courses:", err));
   }, []);
 
-  // Sorting function
   const handleSort = (key) => {
     let direction = "ascending";
     if (sortConfig.key === key && sortConfig.direction === "ascending") {
@@ -24,7 +25,6 @@ export default function SchoolCatalog() {
     setSortConfig({ key, direction });
   };
 
-  // Filter courses based on search input
   const filteredCourses = courses.filter((course) => {
     const searchLower = search.toLowerCase();
     return (
@@ -33,7 +33,6 @@ export default function SchoolCatalog() {
     );
   });
 
-  // Sort filtered courses
   const sortedCourses = [...filteredCourses];
   if (sortConfig.key) {
     sortedCourses.sort((a, b) => {
@@ -50,12 +49,10 @@ export default function SchoolCatalog() {
     });
   }
 
-  // Pagination logic
   const totalPages = Math.ceil(sortedCourses.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedCourses = sortedCourses.slice(startIndex, startIndex + rowsPerPage);
 
-  // Handle Next/Previous buttons
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const handlePrevious = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
@@ -63,14 +60,13 @@ export default function SchoolCatalog() {
     <div className="school-catalog">
       <h1>School Catalog</h1>
 
-      {/* Search input */}
       <input
         type="text"
         placeholder="Search"
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);
-          setCurrentPage(1); // Reset to first page on search
+          setCurrentPage(1);
         }}
       />
 
@@ -95,14 +91,13 @@ export default function SchoolCatalog() {
               <td>{course.semesterCredits}</td>
               <td>{course.totalClockHours}</td>
               <td>
-                <button>Enroll</button>
+                <button onClick={() => enrollCourse(course)}>Enroll</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Pagination buttons */}
       <div className="pagination">
         <button onClick={handlePrevious} disabled={currentPage === 1}>
           Previous
